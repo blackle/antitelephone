@@ -1,0 +1,6 @@
+[package]
+name = "antitelephone"
+version = "0.1.0"
+authors = ["blackle <isabelle@blackle-mori.com>"]
+
+[dependencies]
