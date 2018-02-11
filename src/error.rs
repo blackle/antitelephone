@@ -5,6 +5,7 @@ use std::fmt;
 #[derive(Debug, PartialEq)]
 pub enum Error {
 	IncorrectFormat,
+	MessageTooLong,
 	Duration(DurationError)
 }
 
@@ -22,6 +23,7 @@ impl StdError for Error {
 	fn description(&self) -> &str {
 		match *self {
 			Error::IncorrectFormat => "Command is in an incorrect format",
+			Error::MessageTooLong => "Message is longer than 2048 characters",
 			Error::Duration(ref inner) => inner.description(),
 		}
 	}

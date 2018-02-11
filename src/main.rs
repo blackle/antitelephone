@@ -22,7 +22,6 @@ use std::collections::BinaryHeap;
 use std::env;
 use typemap::Key;
 use regex::Regex;
-use std::time::Duration;
 
 static HELP_TEXT: &'static str = r#"```
 ANTITELEPHONE HELP MANUAL
@@ -89,8 +88,9 @@ fn main() {
 }
 
 command!(help(_context, message) {
-	message.channel_id.send_message(|m|
-		m.content(HELP_TEXT)).unwrap();
+	if let Err(why) = message.channel_id.say(HELP_TEXT) {
+		println!("Error sending message: {:?}", why);
+	}
 });
 
 command!(list(context, message) {
@@ -130,7 +130,7 @@ command!(post(context, message) {
 	// );
 });
 
-fn parse_msg(message : &String) -> Result<(String, Duration), Error> {
+fn parse_msg(message : &String) -> Result<(String, u64), Error> {
 	lazy_static! {
 		static ref COMMAND_RE: Regex = Regex::new(r"^(?P<command>[^ ]+) (?P<duration>[^ ]+) (?P<content>.*)$").unwrap();
 	}
@@ -142,6 +142,10 @@ fn parse_msg(message : &String) -> Result<(String, Duration), Error> {
 
 		let duration = parse_duration(&String::from(duration_str))?;
 
+		if (content.len() > 2048) {
+			return Err(Error::MessageTooLong);
+		}
+
 		return Ok((String::from(content), duration));
 	}
 
@@ -152,21 +156,27 @@ command!(msg(context, message) {
 	let (content, duration) = match parse_msg(&message.content) {
 		Ok(tuple) => tuple,
 		Err(e) => {
-			message.channel_id.send_message(|m| m.content(format!("Error: {}", e.description())));
+			if let Err(why) = message.channel_id.say(format!("Error: {}", e.description())) {
+				println!("Error sending message: {:?}", why);
+			}
 			return Ok(());
 		}
 	};
 
-	message.channel_id.send_message(|m| m.content(format!("content parsable: {} {}", content, duration.as_secs())));
+	let scheduled_msg = ScheduledMessage::new(message.clone(), content, Utc::now(), Utc::now());
+
+	//we don't care if we can delete the message or not. that permission might not be enabled.
+	message.delete().ok();
+	if let Err(why) = message.channel_id.say(format!("Message from @{} consumed by the antitelephone. Scheduled for {}", &message.author.name, &scheduled_msg.destination)) {
+		println!("Error sending message: {:?}", why);
+	}
+
+	scheduled_msg.post();
+
+	// if let Err(why) = message.channel_id.say(format!("content parsable: {} {}", content, duration.as_secs())) {
+	// }
 	// let mut data = context.data.lock();
 	// let mut scheduler = data.get_mut::<MessageSchedulerKey>().unwrap();
-	
-	// message.delete();
-
-	// let scheduled_msg = ScheduledMessage::new(message.clone(), Utc::now(), Utc::now());
-
-	// let name = &message.author.name;
-	// message.channel_id.send_message(|m| m.content(format!("Message from @{} consumed by the antitelephone. Scheduled for {}", name, &scheduled_msg.destination)));
 
 	// scheduler.schedule(scheduled_msg);
 
