@@ -7,6 +7,7 @@ authors = ["blackle <isabelle@blackle-mori.com>"]
 typemap = "0.3.3"
 serenity = "0.5"
 duration-parser = "0.2"
+timer = "0.2"
 regex = "0.2"
 lazy_static = "1.0.0"
 chrono = "0.4"

@@ -4,6 +4,7 @@ extern crate regex;
 extern crate duration_parser;
 extern crate chrono;
 extern crate typemap;
+extern crate timer;
 
 mod scheduled_message;
 use scheduled_message::ScheduledMessage;
@@ -12,16 +13,20 @@ mod error;
 use error::Error;
 use std::error::Error as StdError;
 
+mod message_scheduler;
+use message_scheduler::MessageScheduler;
+
 use serenity::client::Client;
 use serenity::prelude::EventHandler;
 use serenity::framework::StandardFramework;
 use serenity::model::channel::Message;
 use duration_parser::parse_duration;
-use chrono::{DateTime, Utc};
-use std::collections::BinaryHeap;
+use chrono::{Duration, Utc};
 use std::env;
 use typemap::Key;
 use regex::Regex;
+use std::sync::{Mutex, Arc};
+
 
 static HELP_TEXT: &'static str = r#"```
 ANTITELEPHONE HELP MANUAL
@@ -40,24 +45,11 @@ anti.msg <offset> <message> - schedules <message> to appear <offset> from now. O
 ```"#;
 
 
-struct MessageScheduler {
-	queue : BinaryHeap<ScheduledMessage>,
-	// timer : None
-}
-
-impl MessageScheduler {
-	fn new() -> MessageScheduler {
-		MessageScheduler {
-			queue: BinaryHeap::new(),
-			// timer: Uh...
-		}
-	}
-}
 
 struct MessageSchedulerKey;
 
 impl Key for MessageSchedulerKey {
-	type Value = MessageScheduler;
+	type Value = Arc<Mutex<MessageScheduler>>;
 }
 
 struct Handler;
@@ -71,7 +63,8 @@ fn main() {
 
 	{
 		let mut data = client.data.lock();
-		data.insert::<MessageSchedulerKey>(MessageScheduler::new());
+		let scheduler = Arc::new(Mutex::new(MessageScheduler::new()));
+		data.insert::<MessageSchedulerKey>(scheduler);
 	}
 
 	client.with_framework(StandardFramework::new()
@@ -130,7 +123,7 @@ command!(post(context, message) {
 	// );
 });
 
-fn parse_msg(message : &String) -> Result<(String, u64), Error> {
+fn parse_msg(message : &String) -> Result<(String, Duration), Error> {
 	lazy_static! {
 		static ref COMMAND_RE: Regex = Regex::new(r"^(?P<command>[^ ]+) (?P<duration>[^ ]+) (?P<content>.*)$").unwrap();
 	}
@@ -140,9 +133,10 @@ fn parse_msg(message : &String) -> Result<(String, u64), Error> {
 		let duration_str = &capture["duration"];
 		let content = &capture["content"];
 
-		let duration = parse_duration(&String::from(duration_str))?;
+		let duration_seconds = parse_duration(&String::from(duration_str))?;
+		let duration = Duration::seconds(duration_seconds as i64);
 
-		if (content.len() > 2048) {
+		if content.len() > 2048 {
 			return Err(Error::MessageTooLong);
 		}
 
@@ -163,38 +157,16 @@ command!(msg(context, message) {
 		}
 	};
 
-	let scheduled_msg = ScheduledMessage::new(message.clone(), content, Utc::now(), Utc::now());
+	let now = Utc::now();
+	let scheduled_msg = ScheduledMessage::new(message.clone(), content, now, now + duration);
 
 	//we don't care if we can delete the message or not. that permission might not be enabled.
 	message.delete().ok();
-	if let Err(why) = message.channel_id.say(format!("Message from @{} consumed by the antitelephone. Scheduled for {}", &message.author.name, &scheduled_msg.destination)) {
+	if let Err(why) = message.channel_id.say(format!("Message from @{} consumed by the antitelephone. Scheduled for {}", &message.author.name, &scheduled_msg.destination.to_rfc2822() )) {
 		println!("Error sending message: {:?}", why);
 	}
 
-	scheduled_msg.post();
-
-	// if let Err(why) = message.channel_id.say(format!("content parsable: {} {}", content, duration.as_secs())) {
-	// }
-	// let mut data = context.data.lock();
-	// let mut scheduler = data.get_mut::<MessageSchedulerKey>().unwrap();
-
-	// scheduler.schedule(scheduled_msg);
-
-	// let avatar = match message.author.static_avatar_url() {
-	// 	Some(value) => value,
-	// 	None => String::new()
-	// };
-	// let name = &message.author.name;
-	// let content = &message.content;
-
-	// message.channel_id.send_message(|m| m.content(format!("Message from @{} consumed by the antitelephone. Scheduled for INSERT TIME HERE", name)));
-	// message.channel_id.send_message(|m|
-	// 	m.content("Ring Ring! Message from INSERT TIME HERE has arrived!")
-	// 	.embed(|e|
-	// 		e.description(content).author(|a|
-	// 			a.name(&name)
-	// 			.icon_url(&avatar)
-	// 		)
-	// 	)
-	// );
+	let data = context.data.lock();
+	let scheduler = data.get::<MessageSchedulerKey>().unwrap();
+	MessageScheduler::push(&scheduler, scheduled_msg);
 });

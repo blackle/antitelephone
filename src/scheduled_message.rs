@@ -28,7 +28,7 @@ impl ScheduledMessage {
 		let content = &self.content;
 
 		self.message.channel_id.send_message(|m|
-			m.content(format!("Ring Ring! Message from {} has arrived!", &self.origin))
+			m.content(format!("Ring Ring! Message from {} has arrived!", &self.origin.to_rfc2822() ))
 			.embed(|e|
 				e.description(content).author(|a|
 					a.name(name)
@@ -43,7 +43,7 @@ impl ScheduledMessage {
 
 impl Ord for ScheduledMessage {
 	fn cmp(&self, other: &ScheduledMessage) -> Ordering {
-		self.destination.cmp(&other.destination)
+		other.destination.cmp(&self.destination)
 	}
 }
 
