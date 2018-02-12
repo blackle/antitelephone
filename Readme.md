@@ -1,6 +1,6 @@
 # Antitelephone - A Causality Violating Bot for Discord
 
-Antitelephone is a discord bot for scheduling one-off messages. Use the command "anti.msg 5h30m (your message)" and antitelephone will consume your message (deleting it) and will repost it in an embed in five hours and thirty minutes. Use "anti.?" to get the full help manual. Not some features in the manual are unimplemented.
+Antitelephone is a discord bot for scheduling one-off messages. Use the command "anti.msg 5h30m (your message)" and antitelephone will consume your message (deleting it) and will repost it in an embed in five hours and thirty minutes. Use "anti.?" to get the full help manual. Note some features in the manual are unimplemented.
 
 ### To-Do list, in order of difficulty:
 
