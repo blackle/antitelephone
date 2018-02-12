@@ -1,33 +1,45 @@
 use chrono::{DateTime, Utc};
-use serenity::model::channel::Message;
+use serenity::model::id::{ChannelId, MessageId, UserId};
 use std::cmp::Ordering;
 
 pub struct ScheduledMessage {
-	pub message : Message,
 	pub content : String,
+	pub message_id : MessageId,
+	pub author_id : UserId,
+	pub channel_id : ChannelId,
 	pub origin : DateTime<Utc>,
 	pub destination : DateTime<Utc>
 }
 
 impl ScheduledMessage {
-	pub fn new(message : Message, content : String, origin : DateTime<Utc>, destination : DateTime<Utc>) -> ScheduledMessage {
+	pub fn new(content : String, message_id : MessageId, author_id : UserId, channel_id : ChannelId, origin : DateTime<Utc>, destination : DateTime<Utc>) -> ScheduledMessage {
 		ScheduledMessage {
-			message: message,
 			content: content,
+			message_id: message_id,
+			author_id: author_id,
+			channel_id: channel_id,
 			origin: origin,
 			destination: destination
 		}
 	}
 
 	pub fn post(self) -> bool {
-		let avatar = match self.message.author.static_avatar_url() {
+		let author = match self.author_id.get() {
+			Ok(author) => author,
+			Err(why) => {
+				println!("Error retrieving author information: {:?}", why);
+				return false;
+			}
+		};
+
+		let avatar = match author.static_avatar_url() {
 			Some(value) => value,
 			None => String::new()
 		};
-		let name = &self.message.author.name;
+		let name = &author.name;
 		let content = &self.content;
 
-		self.message.channel_id.send_message(|m|
+		self.channel_id.send_message(|m|
 			m.content(format!("Ring Ring! Message from {} has arrived!", &self.origin.to_rfc2822() ))
 			.embed(|e|
 				e.description(content)
@@ -57,7 +69,7 @@ impl PartialOrd for ScheduledMessage {
 
 impl PartialEq for ScheduledMessage {
 	fn eq(&self, other: &ScheduledMessage) -> bool {
-		self.message.id == other.message.id
+		self.message_id == other.message_id
 	}
 }
 

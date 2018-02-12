@@ -5,6 +5,7 @@ extern crate duration_parser;
 extern crate chrono;
 extern crate typemap;
 extern crate timer;
+extern crate cast;
 
 mod scheduled_message;
 use scheduled_message::ScheduledMessage;
@@ -19,14 +20,14 @@ use message_scheduler::MessageScheduler;
 use serenity::client::Client;
 use serenity::prelude::EventHandler;
 use serenity::framework::StandardFramework;
-use serenity::model::channel::Message;
 use duration_parser::parse_duration;
+use duration_parser::Error as DurationError;
 use chrono::{Duration, Utc};
 use std::env;
 use typemap::Key;
 use regex::Regex;
 use std::sync::{Mutex, Arc};
-
+use cast::i64;
 
 static HELP_TEXT: &'static str = r#"```
 ANTITELEPHONE HELP MANUAL
@@ -86,8 +87,15 @@ command!(help(_context, message) {
 });
 
 command!(list(context, message) {
-	// let data = context.data.lock();
-	// let scheduler = data.get::<MessageSchedulerKey>().unwrap();
+	let data = context.data.lock();
+	let scheduler = data.get::<MessageSchedulerKey>().unwrap();
+
+	let scheduler_unlocked = scheduler.lock().unwrap();
+	for scheduled_message in scheduler_unlocked.queue.iter() {
+		if (scheduled_message.channel_id == message.channel_id) {
+			println!("{:?}", scheduled_message.content);
+		}
+	}
 
 	// let mut messages = Vec::new();
 	// for item in scheduler.iter() {
@@ -109,7 +117,10 @@ fn parse_msg(message : &String) -> Result<(String, Duration), Error> {
 		let content = &capture["content"];
 
 		let duration_seconds = parse_duration(&String::from(duration_str))?;
-		let duration = Duration::seconds(duration_seconds as i64);
+		let duration = Duration::seconds(match i64(duration_seconds) {
+			Ok(val) => val,
+			Err(_) => return Err(Error::Duration(DurationError::Overflow))
+		});
 
 		if content.len() > 2048 {
 			return Err(Error::MessageTooLong);
@@ -133,7 +144,7 @@ command!(msg(context, message) {
 	};
 
 	let now = Utc::now();
-	let scheduled_msg = ScheduledMessage::new(message.clone(), content, now, now + duration);
+	let scheduled_msg = ScheduledMessage::new(content, message.id, message.author.id, message.channel_id, now, now + duration);
 
 	//we don't care if we can delete the message or not. that permission might not be enabled.
 	message.delete().ok();

@@ -2,12 +2,12 @@ use std::sync::{Mutex, Arc};
 use std::collections::BinaryHeap;
 use scheduled_message::ScheduledMessage;
 use timer::{Timer, Guard};
-use chrono::{Duration, Utc};
+use chrono::Utc;
 
 type ScheduledMessageHeap = BinaryHeap<ScheduledMessage>;
 
 pub struct MessageScheduler {
-	queue : ScheduledMessageHeap,
+	pub queue : ScheduledMessageHeap,
 	timer : Timer,
 	guard : Option<Guard>,
 }
