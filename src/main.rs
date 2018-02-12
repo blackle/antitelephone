@@ -69,7 +69,6 @@ fn main() {
 
 	client.with_framework(StandardFramework::new()
 		.configure(|c| c.prefix("anti.")) // set the bot's prefix to "~"
-		.cmd("post", post)
 		.cmd("list", list)
 		.cmd("?", help)
 		.cmd("msg", msg));
@@ -97,30 +96,6 @@ command!(list(context, message) {
 
 	// message.channel_id.send_message(|m|
 	// 	m.content(messages.join("\n")));
-});
-
-command!(post(context, message) {
-	// let mut data = context.data.lock();
-	// let mut scheduler = data.get_mut::<MessageSchedulerKey>().unwrap();
-	// let scheduled_msg = scheduler.pop().unwrap();
-	// let message = scheduled_msg.message;
-
-	// let avatar = match message.author.static_avatar_url() {
-	// 	Some(value) => value,
-	// 	None => String::new()
-	// };	
-	// let name = &message.author.name;
-	// let content = &message.content;
-
-	// message.channel_id.send_message(|m|
-	// 	m.content("Ring Ring! Message from INSERT TIME HERE has arrived!")
-	// 	.embed(|e|
-	// 		e.description(content).author(|a|
-	// 			a.name(&name)
-	// 			.icon_url(&avatar)
-	// 		)
-	// 	)
-	// );
 });
 
 fn parse_msg(message : &String) -> Result<(String, Duration), Error> {

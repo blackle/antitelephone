@@ -30,7 +30,9 @@ impl ScheduledMessage {
 		self.message.channel_id.send_message(|m|
 			m.content(format!("Ring Ring! Message from {} has arrived!", &self.origin.to_rfc2822() ))
 			.embed(|e|
-				e.description(content).author(|a|
+				e.description(content)
+				.timestamp(&self.origin)
+				.author(|a|
 					a.name(name)
 					.icon_url(&avatar)
 				)
