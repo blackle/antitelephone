@@ -39,7 +39,7 @@ impl ScheduledMessage {
 		let name = &author.name;
 		let content = &self.content;
 
-		self.channel_id.send_message(|m|
+		if let Err(why) = self.channel_id.send_message(|m|
 			m.content(format!("Ring Ring! Message from {} has arrived!", &self.origin.to_rfc2822() ))
 			.embed(|e|
 				e.description(content)
@@ -49,7 +49,9 @@ impl ScheduledMessage {
 					.icon_url(&avatar)
 				)
 			)
-		);
+		) {
+			println!("Error sending message: {:?}", why);
+		}
 
 		return true;
 	}

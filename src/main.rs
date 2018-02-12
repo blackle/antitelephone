@@ -92,7 +92,7 @@ command!(list(context, message) {
 
 	let scheduler_unlocked = scheduler.lock().unwrap();
 	for scheduled_message in scheduler_unlocked.queue.iter() {
-		if (scheduled_message.channel_id == message.channel_id) {
+		if scheduled_message.channel_id == message.channel_id {
 			println!("{:?}", scheduled_message.content);
 		}
 	}
@@ -117,7 +117,14 @@ fn parse_msg(message : &String) -> Result<(String, Duration), Error> {
 		let content = &capture["content"];
 
 		let duration_seconds = parse_duration(&String::from(duration_str))?;
-		let duration = Duration::seconds(match i64(duration_seconds) {
+
+		let duration_millis = match duration_seconds.checked_mul(1000) {
+			Some(val) => val,
+			None => return Err(Error::Duration(DurationError::Overflow))
+		};
+
+		//I actually hate this
+		let duration = Duration::milliseconds(match i64(duration_millis) {
 			Ok(val) => val,
 			Err(_) => return Err(Error::Duration(DurationError::Overflow))
 		});
