@@ -46,7 +46,6 @@ anti.msg <offset> <message> - schedules <message> to appear <offset> from now. O
 ```"#;
 
 
-
 struct MessageSchedulerKey;
 
 impl Key for MessageSchedulerKey {
