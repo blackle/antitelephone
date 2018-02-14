@@ -92,6 +92,7 @@ command!(help(_context, message) {
 	}
 });
 
+// TODO: separate struct/impl for handing these?
 command!(list(context, message) {
 	// let data = context.data.lock();
 	// let scheduler = data.get::<MessageSchedulerKey>().unwrap();
