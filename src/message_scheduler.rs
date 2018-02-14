@@ -1,21 +1,20 @@
 use std::sync::{Mutex, Arc};
-use std::collections::BinaryHeap;
 use scheduled_message::ScheduledMessage;
+use std::ops::DerefMut;
 use timer::{Timer, Guard};
 use chrono::Utc;
-
-type ScheduledMessageHeap = BinaryHeap<ScheduledMessage>;
+use message_database::MessageDatabase;
 
 pub struct MessageScheduler {
-	pub queue : ScheduledMessageHeap,
+	db : MessageDatabase,
 	timer : Timer,
 	guard : Option<Guard>,
 }
 
 impl MessageScheduler {
-	pub fn new() -> MessageScheduler {
+	pub fn new(db : MessageDatabase) -> MessageScheduler {
 		MessageScheduler {
-			queue: ScheduledMessageHeap::new(),
+			db: db,
 			timer: Timer::new(),
 			guard: None
 		}
@@ -25,7 +24,7 @@ impl MessageScheduler {
 		let arc_clone = self_arc.clone();
 		{
 			let mut self_unlocked = self_arc.lock().unwrap();
-			self_unlocked.queue.push(message);
+			self_unlocked.db.push(message);
 		}
 
 		MessageScheduler::make_timer(&arc_clone);
@@ -36,14 +35,7 @@ impl MessageScheduler {
 
 		{
 			let mut self_unlocked = self_arc.lock().unwrap();
-			while let Some(message) = self_unlocked.queue.pop() {
-				if message.destination < Utc::now() {
-					message.post();
-				} else {
-					self_unlocked.queue.push(message);
-					break;
-				}
-			}
+			self_unlocked.db.post_all_until(Utc::now());
 		}
 
 		MessageScheduler::make_timer(&arc_clone);
@@ -51,13 +43,14 @@ impl MessageScheduler {
 
 	fn make_timer(self_arc : &Arc<Mutex<MessageScheduler>>) {
 		let arc_clone = self_arc.clone();
+		// I don't know why this works but it does ;_;
 		let mut self_unlocked = self_arc.lock().unwrap();
+		let real_self = self_unlocked.deref_mut();
 
-		if let Some(message) = self_unlocked.queue.pop() {
+		if let Some(message) = real_self.db.peek() {
 			let duration = message.destination.signed_duration_since(Utc::now());
-			self_unlocked.queue.push(message);
 
-			self_unlocked.guard = Some(self_unlocked.timer.schedule_with_delay(duration, move || {
+			real_self.guard = Some(real_self.timer.schedule_with_delay(duration, move || {
 				MessageScheduler::timeout(&arc_clone);
 			}));
 		}

@@ -10,6 +10,8 @@ Antitelephone is a discord bot for scheduling one-off messages. Use the command 
 - [ ] implement delete command
 - [ ] per-channel-id limits on number of items in queue
 - [ ] see aboot using serenity's built-in help functionality
-- [ ] throttled backups of the queue (i.e. a few seconds after someone sends a message, the timer of which is cancelled whenever a new message comes in, unless it is overdue, in which case it happens immediately....?)
-- [ ] loading queue from disk, and asking channels that have overdue messages if they would like to receive them
+- [ ] throttle backups
+- [ ] ask channels if they would like to receive overdue messages if the bot crashed (need message limits first)
+- [x] ~~throttled~~ backups of the queue ~~(i.e. a few seconds after someone sends a message, the timer of which is cancelled whenever a new message comes in, unless it is overdue, in which case it happens immediately....?)~~ (URGENT)
+- [x] loading queue from disk, and ~~asking channels that have overdue messages if they would like to receive them~~ (URGENT)
 - [ ] implement user-defined input/output channels, so the input channel can be muted so nobody will see notifications of the consumed messages

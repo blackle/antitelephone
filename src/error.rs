@@ -2,11 +2,12 @@ use duration_parser::Error as DurationError;
 use std::error::Error as StdError;
 use std::fmt;
 
+//TODO: make CommandError, DatabaseError, etc
 #[derive(Debug, PartialEq)]
 pub enum Error {
 	IncorrectFormat,
 	MessageTooLong,
-	Duration(DurationError)
+	Duration(DurationError),
 }
 
 impl From<DurationError> for Error {

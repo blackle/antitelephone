@@ -2,6 +2,7 @@ use chrono::{DateTime, Utc};
 use serenity::model::id::{ChannelId, MessageId, UserId};
 use std::cmp::Ordering;
 
+#[derive(Serialize, Deserialize)]
 pub struct ScheduledMessage {
 	pub content : String,
 	pub message_id : MessageId,
@@ -23,6 +24,7 @@ impl ScheduledMessage {
 		}
 	}
 
+	//TODO: make this not a bool and instead a Result<(), Error>
 	pub fn post(self) -> bool {
 		let author = match self.author_id.get() {
 			Ok(author) => author,
@@ -40,7 +42,7 @@ impl ScheduledMessage {
 		let content = &self.content;
 
 		if let Err(why) = self.channel_id.send_message(|m|
-			m.content(format!("Ring Ring! Message from {} has arrived!", &self.origin.to_rfc2822() ))
+			m.content(format!("☎ Ring Ring! Message from {} has arrived!", &self.origin.to_rfc2822() ))
 			.embed(|e|
 				e.description(content)
 				.timestamp(&self.origin)
