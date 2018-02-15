@@ -6,7 +6,7 @@ Antitelephone is a discord bot for scheduling one-off messages. Use the command 
 
 - [ ] print out time difference in a nice way (5 mins from now/3 hours ago/etc)
 - [ ] allow offset parameter to be an actual date
-- [ ] implement list command
+- [x] implement list command
 - [ ] implement delete command
 - [ ] per-channel-id limits on number of items in queue
 - [ ] see aboot using serenity's built-in help functionality
