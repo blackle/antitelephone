@@ -26,6 +26,7 @@ impl ScheduledMessage {
 
 	//TODO: make this not a bool and instead a Result<(), Error>
 	pub fn post(self) -> bool {
+		//TODO: figure out why we're able to send messages here without knowing anything about main's client
 		let author = match self.author_id.get() {
 			Ok(author) => author,
 			Err(why) => {

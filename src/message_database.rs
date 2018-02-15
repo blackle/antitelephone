@@ -6,6 +6,9 @@ use std::io::{Error, Seek, SeekFrom};
 use fs2::FileExt;
 use serde_json::{from_reader, to_writer};
 use chrono::{DateTime, Utc};
+use serenity::model::id::ChannelId;
+use std::collections::binary_heap::Iter;
+use std::iter::Filter;
 
 type ScheduledMessageHeap = BinaryHeap<ScheduledMessage>;
 
@@ -44,13 +47,12 @@ impl MessageDatabase {
 			from_reader(source.try_clone()?).unwrap()
 		};
 
-		println!("queue size: {}", queue.len());
-
 		let mut db = MessageDatabase {
 			queue: queue,
 			source: source
 		};
 
+		//TODO: ask channels permission to post overdue messages
 		db.post_all_until(Utc::now());
 		Ok(db)
 	}
@@ -66,7 +68,9 @@ impl MessageDatabase {
 	}
 
 	pub fn push(&mut self, message : ScheduledMessage) {
+		//TODO: limit number of messages on a per-channel basis
 		self.queue.push(message);
+		//TODO: handle the return value of save
 		self.save();
 	}
 
@@ -84,6 +88,10 @@ impl MessageDatabase {
 			}
 		}
 		self.save();
+	}
+
+	pub fn iter<'a>(&'a self, channel_id : &'a ChannelId) -> Box<Iterator<Item=&'a ScheduledMessage> + 'a> {
+		Box::new(self.queue.iter().filter(move |x| &x.channel_id == channel_id))
 	}
 }
 

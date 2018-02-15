@@ -6,7 +6,8 @@ use chrono::Utc;
 use message_database::MessageDatabase;
 
 pub struct MessageScheduler {
-	db : MessageDatabase,
+	//TODO: does this really need to be pub??? what is MessageScheduler's responsibility??
+	pub db : MessageDatabase,
 	timer : Timer,
 	guard : Option<Guard>,
 }

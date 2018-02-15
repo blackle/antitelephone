@@ -75,7 +75,7 @@ fn main() {
 	}
 
 	client.with_framework(StandardFramework::new()
-		.configure(|c| c.prefix("anti.")) // set the bot's prefix to "~"
+		.configure(|c| c.prefix("clod.")) // set the bot's prefix to "~"
 		.cmd("list", list)
 		.cmd("?", help)
 		.cmd("msg", msg));
@@ -94,23 +94,20 @@ command!(help(_context, message) {
 
 // TODO: separate struct/impl for handing these?
 command!(list(context, message) {
-	// let data = context.data.lock();
-	// let scheduler = data.get::<MessageSchedulerKey>().unwrap();
+	let data = context.data.lock();
+	let scheduler = data.get::<MessageSchedulerKey>().unwrap();
 
-	// let scheduler_unlocked = scheduler.lock().unwrap();
-	// for scheduled_message in scheduler_unlocked.queue.iter() {
-	// 	if scheduled_message.channel_id == message.channel_id {
-	// 		println!("{:?}", scheduled_message.content);
-	// 	}
-	// }
+	// TODO: can we do this in a different way so we don't have to unlock twice?
+	let scheduler_unlocked = scheduler.lock().unwrap();
+	let mut msg_list = Vec::<String>::new();
 
-	// let mut messages = Vec::new();
-	// for item in scheduler.iter() {
-	// 	messages.push(item.message.content.clone());
-	// }
+	msg_list.push(String::from("```"));
+	for scheduled_message in scheduler_unlocked.db.iter(&message.channel_id) {
+		msg_list.push(format!("{} - {} => {}", scheduled_message.message_id, scheduled_message.origin, scheduled_message.destination));
+	}
+	msg_list.push(String::from("```"));
 
-	// message.channel_id.send_message(|m|
-	// 	m.content(messages.join("\n")));
+	message.channel_id.say(msg_list.join("\n"));
 });
 
 fn parse_msg(message : &String) -> Result<(String, Duration), Error> {
