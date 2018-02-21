@@ -75,7 +75,7 @@ fn main() {
 	}
 
 	client.with_framework(StandardFramework::new()
-		.configure(|c| c.prefix("clod.")) // set the bot's prefix to "~"
+		.configure(|c| c.prefix("anti."))
 		.cmd("list", list)
 		.cmd("?", help)
 		.cmd("msg", msg));
@@ -107,7 +107,9 @@ command!(list(context, message) {
 	}
 	msg_list.push(String::from("```"));
 
-	message.channel_id.say(msg_list.join("\n"));
+	if let Err(why) = message.channel_id.say(msg_list.join("\n")) {
+		println!("Error sending message: {:?}", why);
+	}
 });
 
 fn parse_msg(message : &String) -> Result<(String, Duration), Error> {

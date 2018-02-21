@@ -7,8 +7,6 @@ use fs2::FileExt;
 use serde_json::{from_reader, to_writer};
 use chrono::{DateTime, Utc};
 use serenity::model::id::ChannelId;
-use std::collections::binary_heap::Iter;
-use std::iter::Filter;
 
 type ScheduledMessageHeap = BinaryHeap<ScheduledMessage>;
 
