@@ -70,7 +70,7 @@ fn main() {
 	{
 		let mut data = client.data.lock();
 		let db = MessageDatabase::new().unwrap();
-		let scheduler = Arc::new(Mutex::new(MessageScheduler::new(db)));
+		let scheduler = MessageScheduler::new(db);
 		data.insert::<MessageSchedulerKey>(scheduler);
 	}
 

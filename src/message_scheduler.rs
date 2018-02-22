@@ -13,12 +13,14 @@ pub struct MessageScheduler {
 }
 
 impl MessageScheduler {
-	pub fn new(db : MessageDatabase) -> MessageScheduler {
-		MessageScheduler {
+	pub fn new(db : MessageDatabase) -> Arc<Mutex<MessageScheduler>> {
+		let mut scheduler = Arc::new(Mutex::new(MessageScheduler {
 			db: db,
 			timer: Timer::new(),
 			guard: None
-		}
+		}));
+		MessageScheduler::make_timer(&scheduler);
+		scheduler
 	}
 
 	pub fn push(self_arc : &Arc<Mutex<MessageScheduler>>, message : ScheduledMessage) {
